@@ -149,6 +149,103 @@ export const syncData = async (
   }
 };
 
+export const fetchData = async () => {
+  if (!supabase) supabase = getStoredSupabase();
+  if (!supabase) return { success: false, error: "Supabase não inicializado" };
+
+  try {
+    const { data: profiles, error: errProf } = await supabase.from('profiles').select('*');
+    if (errProf) throw errProf;
+
+    const { data: accounts, error: errAcc } = await supabase.from('accounts').select('*');
+    if (errAcc) throw errAcc;
+
+    const { data: categories, error: errCat } = await supabase.from('categories').select('*');
+    if (errCat) throw errCat;
+
+    const { data: transactions, error: errTx } = await supabase.from('transactions').select('*');
+    if (errTx) throw errTx;
+
+    const { data: vaults, error: errVault } = await supabase.from('vaults').select('*');
+    if (errVault) throw errVault;
+
+    const { data: debts, error: errDebt } = await supabase.from('debts').select('*');
+    if (errDebt) throw errDebt;
+
+    const { data: fixedExpenses, error: errFixed } = await supabase.from('fixed_expenses').select('*');
+    if (errFixed) throw errFixed;
+
+    // Map content back to frontend types if necessary, though direct mapping is close.
+    // We'll perform basic mapping to ensure camelCase compatibility
+    const mappedProfiles = profiles.map((p: any) => ({
+      id: p.id, name: p.name, color: p.color, avatar: p.avatar
+    }));
+
+    // We also need to reconstruct UserStats from profiles if stored there, or separate table?
+    // Current syncData stores stats in profiles (xp, level).
+    const mappedStats: Record<string, UserStats> = {};
+    profiles.forEach((p: any) => {
+      mappedStats[p.id] = {
+        xp: p.xp || 0,
+        level: p.level || 1,
+        currentStreak: 1,
+        lastLoginDate: new Date().toISOString(),
+        totalTransactions: 0, // Would need to count txs
+        unlockedAchievements: []
+      };
+    });
+
+    const mappedAccounts = accounts.map((a: any) => ({
+      id: a.id, profileId: a.profile_id, name: a.name, type: a.type, balance: a.balance,
+      currency: a.currency, limit: a.limit, closingDate: a.closing_date, dueDate: a.due_date, color: a.color
+    }));
+
+    const mappedCategories = categories.map((c: any) => ({
+      id: c.id, profileId: c.profile_id, name: c.name, icon: c.icon, color: c.color, parentId: c.parent_id, budget: c.budget
+    }));
+
+    const mappedTransactions = transactions.map((t: any) => ({
+      id: t.id, profileId: t.profile_id, amount: t.amount, date: t.date, description: t.description,
+      categoryId: t.category_id, accountId: t.account_id, destinationAccountId: t.destination_account_id,
+      type: t.type, status: t.status, tags: t.tags, isRecurring: t.is_recurring
+    }));
+
+    const mappedVaults = vaults.map((v: any) => ({
+      id: v.id, profileId: v.profile_id, name: v.name, targetAmount: v.target_amount, currentAmount: v.current_amount,
+      deadline: v.deadline, icon: v.icon, color: v.color
+    }));
+
+    const mappedDebts = debts.map((d: any) => ({
+      id: d.id, profileId: d.profile_id, name: d.name, totalAmount: d.total_amount, installmentsTotal: d.installments_total,
+      installmentsPaid: d.installments_paid, dueDate: d.due_date, categoryId: d.category_id, status: d.status,
+      color: d.color, description: d.description
+    }));
+
+    const mappedFixed = fixedExpenses.map((f: any) => ({
+      id: f.id, profileId: f.profile_id, name: f.name, amount: f.amount, dueDate: f.due_date,
+      categoryId: f.category_id, lastPaidMonth: f.last_paid_month, color: f.color
+    }));
+
+    return {
+      success: true,
+      data: {
+        profiles: mappedProfiles,
+        allUserStats: mappedStats,
+        accounts: mappedAccounts,
+        categories: mappedCategories,
+        transactions: mappedTransactions,
+        vaults: mappedVaults,
+        debts: mappedDebts,
+        fixedExpenses: mappedFixed
+      }
+    };
+
+  } catch (error: any) {
+    console.error("Erro ao buscar dados:", error);
+    return { success: false, error: error.message };
+  }
+};
+
 export const deleteRemoteAccount = async (id: string) => supabase?.from('accounts').delete().eq('id', id);
 export const deleteRemoteCategory = async (id: string) => supabase?.from('categories').delete().eq('id', id);
 export const deleteRemoteVault = async (id: string) => supabase?.from('vaults').delete().eq('id', id);

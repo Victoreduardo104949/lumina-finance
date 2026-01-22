@@ -17,7 +17,7 @@ import ProfileSelector from './components/ProfileSelector';
 import { MOCK_CATEGORIES } from './constants';
 import { Transaction, Account, Category, UserStats, Vault, Profile, Debt, FixedExpense, SyncConfig } from './types';
 import { Trash2, Plus, CreditCard as CreditCardIcon, Landmark, Wallet, Banknote, TrendingUp } from 'lucide-react';
-import { initSupabase, syncData, deleteRemoteCategory } from './services/supabaseService';
+import { initSupabase, syncData, deleteRemoteCategory, fetchData } from './services/supabaseService';
 
 const App: React.FC = () => {
   const [profiles, setProfiles] = useState<Profile[]>(() => {
@@ -62,7 +62,7 @@ const App: React.FC = () => {
   const [syncConfig, setSyncConfig] = useState<SyncConfig>(() => {
     const saved = localStorage.getItem('lumina_sync_config');
     return saved ? JSON.parse(saved) : {
-      enabled: false,
+      enabled: !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY),
       supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
       supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY || ''
     };
@@ -112,6 +112,39 @@ const App: React.FC = () => {
   useEffect(() => {
     if (syncConfig.supabaseUrl && syncConfig.supabaseKey) {
       initSupabase(syncConfig.supabaseUrl, syncConfig.supabaseKey);
+
+      if (syncConfig.enabled) {
+        const loadData = async () => {
+          const result = await fetchData();
+          if (result.success && result.data) {
+            setProfiles(result.data.profiles);
+            setAccounts(result.data.accounts);
+            setCategories(result.data.categories);
+            setTransactions(result.data.transactions);
+            setVaults(result.data.vaults);
+            setDebts(result.data.debts);
+            setFixedExpenses(result.data.fixedExpenses);
+
+            setAllUserStats(prev => {
+              const newStats = { ...prev };
+              Object.keys(result.data!.allUserStats).forEach(pid => {
+                const remoteStat = result.data!.allUserStats[pid];
+                if (newStats[pid]) {
+                  newStats[pid] = {
+                    ...newStats[pid],
+                    xp: remoteStat.xp,
+                    level: remoteStat.level
+                  };
+                } else {
+                  newStats[pid] = remoteStat;
+                }
+              });
+              return newStats;
+            });
+          }
+        };
+        loadData();
+      }
     }
   }, [syncConfig]);
 
