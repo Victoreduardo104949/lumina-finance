@@ -51,7 +51,7 @@ export const getFinancialInsights = async (
     5. Idioma: Português do Brasil.
   `;
 
-  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"];
+  const modelsToTry = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"];
 
   for (const modelName of modelsToTry) {
     try {
