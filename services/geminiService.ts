@@ -51,9 +51,10 @@ export const getFinancialInsights = async (
     3. Responda em HTML estilizado com Tailwind (use <div>, <p>, <span>).
     4. Se o saldo for menor que os compromissos, dê um alerta crítico em vermelho.
     5. Idioma: Português do Brasil.
+    6. No final da resposta, adicione uma linha pequena e discreta dizendo: "Uso gratuito: 15 req/min e 1.500 req/dia".
   `;
 
-  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-pro"];
+  const modelsToTry = ["gemini-3-flash-preview", "gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-pro"];
 
   for (const modelName of modelsToTry) {
     try {
