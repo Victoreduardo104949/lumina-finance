@@ -4,6 +4,8 @@ import { Transaction, Account, Debt, FixedExpense } from "../types";
 
 const getAIClient = () => {
   const apiKey = import.meta.env.VITE_API_KEY;
+  console.log("🛠️ Debug Gemini - Chave presente:", !!apiKey, "Início:", apiKey?.substring(0, 5));
+
   if (!apiKey || apiKey.trim() === '') return null;
   try {
     return new GoogleGenerativeAI(apiKey);
