@@ -17,7 +17,7 @@ import ProfileSelector from './components/ProfileSelector';
 import { MOCK_CATEGORIES } from './constants';
 import { Transaction, Account, Category, UserStats, Vault, Profile, Debt, FixedExpense, SyncConfig } from './types';
 import { Trash2, Plus, CreditCard as CreditCardIcon, Landmark, Wallet, Banknote, TrendingUp } from 'lucide-react';
-import { initSupabase, syncData, deleteRemoteCategory, fetchData } from './services/supabaseService';
+import { initSupabase, syncData, deleteRemoteCategory, fetchData, deleteRemoteAccount, deleteRemoteVault, deleteRemoteDebt, deleteRemoteFixedExpense } from './services/supabaseService';
 
 const App: React.FC = () => {
   const [profiles, setProfiles] = useState<Profile[]>(() => {
@@ -114,14 +114,46 @@ const App: React.FC = () => {
     localStorage.setItem('lumina_sync_config', JSON.stringify(syncConfig));
   }, [profiles, currentProfileId, transactions, accounts, categories, vaults, debts, fixedExpenses, allUserStats, syncConfig]);
 
+  // Auto-sync effect
   useEffect(() => {
+    if (syncConfig.enabled && syncConfig.supabaseUrl && syncConfig.supabaseKey) {
+      const timer = setTimeout(async () => {
+        console.log("🔄 Iniciando sincronização automática...");
+        try {
+          const result = await syncData(profiles, allUserStats, accounts, categories, vaults, transactions, debts, fixedExpenses);
+          if (result.success) {
+            console.log("✅ Sincronização automática concluída com sucesso!");
+            setSyncConfig(prev => ({ ...prev, lastSynced: new Date().toISOString() }));
+          } else {
+            console.error("❌ Falha na sincronização automática:", result.error);
+          }
+        } catch (error) {
+          console.error("❌ Erro catastrófico no auto-sync:", error);
+        }
+      }, 3000); // 3s debounce
+      return () => clearTimeout(timer);
+    }
+  }, [profiles, allUserStats, accounts, categories, vaults, transactions, debts, fixedExpenses, syncConfig.enabled, syncConfig.supabaseUrl, syncConfig.supabaseKey]);
+
+  // Supabase Init & Initial Load Effect
+  useEffect(() => {
+    console.log("🔑 Verificando configuração de sincronização:", {
+      hasUrl: !!syncConfig.supabaseUrl,
+      hasKey: !!syncConfig.supabaseKey,
+      enabled: syncConfig.enabled
+    });
+
     if (syncConfig.supabaseUrl && syncConfig.supabaseKey) {
+
+      console.log("🔌 Inicializando cliente Supabase...");
       initSupabase(syncConfig.supabaseUrl, syncConfig.supabaseKey);
 
       if (syncConfig.enabled) {
         const loadData = async () => {
+          console.log("📥 Buscando dados remotos para sincronização inicial...");
           const result = await fetchData();
           if (result.success && result.data) {
+            console.log("📦 Dados remotos carregados com sucesso!");
             setProfiles(result.data.profiles);
             setAccounts(result.data.accounts);
             setCategories(result.data.categories);
@@ -146,12 +178,14 @@ const App: React.FC = () => {
               });
               return newStats;
             });
+          } else {
+            console.warn("⚠️ Falha ao buscar dados remotos ou banco vazio:", result.error);
           }
         };
         loadData();
       }
     }
-  }, [syncConfig]);
+  }, [syncConfig.supabaseUrl, syncConfig.supabaseKey]); // Apenas inicializa se as chaves mudarem
 
   const handleAddProfile = (name: string, color: string) => {
     const newProfile: Profile = {
@@ -239,7 +273,12 @@ const App: React.FC = () => {
       >
         <RewardOverlay xpGained={rewardState.xp} achievementUnlocked={rewardState.achievement} onClose={() => setRewardState({ xp: null, achievement: null })} />
         <Routes>
-          <Route path="/" element={<Dashboard transactions={filteredTransactions} accounts={filteredAccounts} vaults={filteredVaults} fixedExpenses={filteredFixedExpenses} debts={filteredDebts} privacyMode={privacyMode} togglePrivacy={() => setPrivacyMode(!privacyMode)} userStats={currentUserStats} onAddVault={() => setIsVaultModalOpen(true)} onDeleteVault={(id) => setVaults(v => v.filter(item => item.id !== id))} />} />
+          <Route path="/" element={<Dashboard transactions={filteredTransactions} accounts={filteredAccounts} vaults={filteredVaults} fixedExpenses={filteredFixedExpenses} debts={filteredDebts} privacyMode={privacyMode} togglePrivacy={() => setPrivacyMode(!privacyMode)} userStats={currentUserStats} onAddVault={() => setIsVaultModalOpen(true)} onDeleteVault={(id) => {
+            if (window.confirm('Excluir este cofre?')) {
+              setVaults(v => v.filter(item => item.id !== id));
+              if (syncConfig.enabled) deleteRemoteVault(id);
+            }
+          }} />} />
           <Route path="/wallet" element={
             <div className="space-y-6 animate-fadeIn pb-32">
               <div className="flex justify-between items-center px-4">
@@ -293,15 +332,30 @@ const App: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      <button onClick={() => { if (window.confirm('Excluir esta conta?')) setAccounts(a => a.filter(i => i.id !== acc.id)) }} className="absolute top-4 right-4 text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 p-2 transition-all"><Trash2 size={16} /></button>
+                      <button onClick={() => {
+                        if (window.confirm('Excluir esta conta?')) {
+                          setAccounts(a => a.filter(i => i.id !== acc.id));
+                          if (syncConfig.enabled) deleteRemoteAccount(acc.id);
+                        }
+                      }} className="absolute top-4 right-4 text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 p-2 transition-all"><Trash2 size={16} /></button>
                     </div>
                   );
                 })}
               </div>
             </div>
           } />
-          <Route path="/fixed" element={<FixedExpenseManager expenses={filteredFixedExpenses} accounts={filteredAccounts} categories={filteredCategories} onAddExpense={(d) => setFixedExpenses(prev => [...prev, { ...d, id: `f_${Date.now()}`, profileId: currentProfileId } as FixedExpense])} onPayExpense={(id, accId) => { }} onDeleteExpense={(id) => setFixedExpenses(p => p.filter(e => e.id !== id))} />} />
-          <Route path="/debts" element={<DebtManager debts={filteredDebts} accounts={filteredAccounts} categories={filteredCategories} onAddDebt={() => setIsDebtModalOpen(true)} onPayInstallment={(id, accId) => { }} onDeleteDebt={(id) => setDebts(p => p.filter(d => d.id !== id))} />} />
+          <Route path="/fixed" element={<FixedExpenseManager expenses={filteredFixedExpenses} accounts={filteredAccounts} categories={filteredCategories} onAddExpense={(d) => setFixedExpenses(prev => [...prev, { ...d, id: `f_${Date.now()}`, profileId: currentProfileId } as FixedExpense])} onPayExpense={(id, accId) => { }} onDeleteExpense={(id) => {
+            if (window.confirm('Excluir este gasto fixo?')) {
+              setFixedExpenses(p => p.filter(e => e.id !== id));
+              if (syncConfig.enabled) deleteRemoteFixedExpense(id);
+            }
+          }} />} />
+          <Route path="/debts" element={<DebtManager debts={filteredDebts} accounts={filteredAccounts} categories={filteredCategories} onAddDebt={() => setIsDebtModalOpen(true)} onPayInstallment={(id, accId) => { }} onDeleteDebt={(id) => {
+            if (window.confirm('Excluir esta dívida?')) {
+              setDebts(p => p.filter(d => d.id !== id));
+              if (syncConfig.enabled) deleteRemoteDebt(id);
+            }
+          }} />} />
           <Route path="/analytics" element={
             <div className="space-y-8 animate-fadeIn pb-32">
               <h1 className="text-2xl font-black text-slate-800 dark:text-white px-2 uppercase tracking-tighter">Análise com IA</h1>

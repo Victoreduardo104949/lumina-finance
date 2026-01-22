@@ -1,12 +1,12 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Transaction, Account, Debt, FixedExpense } from "../types";
 
 const getAIClient = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = import.meta.env.VITE_API_KEY;
   if (!apiKey || apiKey.trim() === '') return null;
   try {
-    return new GoogleGenAI({ apiKey });
+    return new GoogleGenerativeAI(apiKey);
   } catch (e) {
     console.error("Failed to initialize Gemini client:", e);
     return null;
@@ -19,9 +19,9 @@ export const getFinancialInsights = async (
   debts: Debt[],
   fixedExpenses: FixedExpense[] = []
 ): Promise<string> => {
-  const ai = getAIClient();
-  if (!ai) {
-    return "<div class='p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-400'>✨ Configure a API Key do Gemini para obter insights financeiros.</div>";
+  const genAI = getAIClient();
+  if (!genAI) {
+    return "<div class='p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-400'>✨ Configure a API Key do Gemini (VITE_API_KEY) no arquivo .env para obter insights financeiros.</div>";
   }
 
   const currentMonthStr = new Date().toISOString().slice(0, 7);
@@ -52,11 +52,10 @@ export const getFinancialInsights = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: prompt,
-    });
-    const text = response.text;
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     return text || "Sem insights no momento.";
   } catch (error) {
     console.error("Gemini Error:", error);
@@ -65,15 +64,15 @@ export const getFinancialInsights = async (
 };
 
 export const suggestCategory = async (description: string): Promise<string> => {
-  const ai = getAIClient();
-  if (!ai) return "";
+  const genAI = getAIClient();
+  if (!genAI) return "";
 
   const prompt = `Classifique: "${description}" em uma categoria (retorne APENAS o nome): Moradia, Alimentação, Transporte, Lazer, Compras, Salário, Investimentos, Saúde.`;
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash', contents: prompt,
-    });
-    const text = response.text;
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     return text?.trim() || "";
   } catch (e) { return ""; }
 }
