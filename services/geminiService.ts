@@ -51,30 +51,39 @@ export const getFinancialInsights = async (
     5. Idioma: Português do Brasil.
   `;
 
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    return text || "Sem insights no momento.";
-  } catch (error: any) {
-    console.error("Gemini Details:", error);
-    const errorMessage = error.message || "";
+  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"];
 
-    // Diagnóstico detalhado para o usuário
-    if (errorMessage.includes("403") || errorMessage.includes("PERMISSION_DENIED")) {
-      return "<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Acesso Negado (403)</b>: Sua chave de API pode estar incorreta, expirada ou o modelo não está disponível na sua região.</div>";
-    }
-    if (errorMessage.includes("401") || errorMessage.includes("UNAUTHENTICATED")) {
-      return "<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Não Autenticado (401)</b>: A chave de API não foi reconhecida. Verifique se configurou <code>VITE_API_KEY</code> no Vercel.</div>";
-    }
-    if (errorMessage.includes("429") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
-      return "<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Cota Excedida (429)</b>: Muitas requisições. Tente novamente em um minuto.</div>";
-    }
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      return text || "Sem insights no momento.";
+    } catch (error: any) {
+      const errorMessage = error.message || "";
+      // Se não for um erro de "Modelo não encontrado (404)", interrompe o loop e mostra o erro real
+      if (!errorMessage.includes("404") && !errorMessage.includes("not found")) {
+        console.error(`Gemini Error (${modelName}):`, error);
 
-    return `<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Erro na API</b>: ${errorMessage.substring(0, 150)}...</div>`;
+        if (errorMessage.includes("403") || errorMessage.includes("PERMISSION_DENIED")) {
+          return "<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Acesso Negado (403)</b>: Sua chave de API pode estar incorreta ou o modelo não está disponível na sua região.</div>";
+        }
+        if (errorMessage.includes("401") || errorMessage.includes("UNAUTHENTICATED")) {
+          return "<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Não Autenticado (401)</b>: Verifique sua <code>VITE_API_KEY</code> no Vercel.</div>";
+        }
+        if (errorMessage.includes("429") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
+          return "<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Cota Excedida (429)</b>: Tente novamente em um minuto.</div>";
+        }
+        return `<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Erro na API</b>: ${errorMessage.substring(0, 150)}...</div>`;
+      }
+      console.warn(`Modelo ${modelName} não encontrado (404), tentando próximo...`);
+    }
   }
+
+  return "<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ <b>Erro 404</b>: Nenhum modelo Gemini disponível foi encontrado. Verifique se sua chave tem acesso aos modelos 1.5 Flash ou Pro no Google AI Studio.</div>";
 };
+
 
 export const suggestCategory = async (description: string): Promise<string> => {
   const genAI = getAIClient();
