@@ -61,10 +61,15 @@ const App: React.FC = () => {
 
   const [syncConfig, setSyncConfig] = useState<SyncConfig>(() => {
     const saved = localStorage.getItem('lumina_sync_config');
-    return saved ? JSON.parse(saved) : {
-      enabled: !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY),
-      supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
-      supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+    const parsed = saved ? JSON.parse(saved) : {};
+    const envUrl = import.meta.env.VITE_SUPABASE_URL;
+    const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    return {
+      ...parsed,
+      enabled: !!(envUrl && envKey) || parsed.enabled || false,
+      supabaseUrl: envUrl || parsed.supabaseUrl || '',
+      supabaseKey: envKey || parsed.supabaseKey || ''
     };
   });
 
