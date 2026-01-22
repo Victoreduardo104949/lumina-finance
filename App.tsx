@@ -137,23 +137,17 @@ const App: React.FC = () => {
 
   // Supabase Init & Initial Load Effect
   useEffect(() => {
-    console.log("🔑 Verificando configuração de sincronização:", {
-      hasUrl: !!syncConfig.supabaseUrl,
-      hasKey: !!syncConfig.supabaseKey,
-      enabled: syncConfig.enabled
-    });
-
     if (syncConfig.supabaseUrl && syncConfig.supabaseKey) {
-
       console.log("🔌 Inicializando cliente Supabase...");
       initSupabase(syncConfig.supabaseUrl, syncConfig.supabaseKey);
 
+      // Sincronização inicial apenas quando habilitado e as chaves estiverem presentes
       if (syncConfig.enabled) {
-        const loadData = async () => {
-          console.log("📥 Buscando dados remotos para sincronização inicial...");
+        const loadInitialData = async () => {
+          console.log("📥 [Auto-Sync] Buscando dados remotos iniciais...");
           const result = await fetchData();
           if (result.success && result.data) {
-            console.log("📦 Dados remotos carregados com sucesso!");
+            console.log("📦 [Auto-Sync] Dados carregados!");
             setProfiles(result.data.profiles);
             setAccounts(result.data.accounts);
             setCategories(result.data.categories);
@@ -167,11 +161,7 @@ const App: React.FC = () => {
               Object.keys(result.data!.allUserStats).forEach(pid => {
                 const remoteStat = result.data!.allUserStats[pid];
                 if (newStats[pid]) {
-                  newStats[pid] = {
-                    ...newStats[pid],
-                    xp: remoteStat.xp,
-                    level: remoteStat.level
-                  };
+                  newStats[pid] = { ...newStats[pid], xp: remoteStat.xp, level: remoteStat.level };
                 } else {
                   newStats[pid] = remoteStat;
                 }
@@ -179,13 +169,14 @@ const App: React.FC = () => {
               return newStats;
             });
           } else {
-            console.warn("⚠️ Falha ao buscar dados remotos ou banco vazio:", result.error);
+            console.warn("⚠️ [Auto-Sync] Sem dados no servidor ou falha:", result.error);
           }
         };
-        loadData();
+        loadInitialData();
       }
     }
-  }, [syncConfig.supabaseUrl, syncConfig.supabaseKey]); // Apenas inicializa se as chaves mudarem
+  }, [syncConfig.supabaseUrl, syncConfig.supabaseKey, syncConfig.enabled]); // Adicionado syncConfig.enabled
+
 
   const handleAddProfile = (name: string, color: string) => {
     const newProfile: Profile = {
