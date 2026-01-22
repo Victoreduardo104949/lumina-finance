@@ -57,9 +57,13 @@ export const getFinancialInsights = async (
     const response = await result.response;
     const text = response.text();
     return text || "Sem insights no momento.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Error:", error);
-    return "Erro ao conectar com o concierge.";
+    const errorMessage = error.message || "";
+    if (errorMessage.includes("API_KEY_INVALID")) {
+      return "<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ Chave de API Inválida. Verifique sua VITE_API_KEY.</div>";
+    }
+    return `<div class='p-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400'>❌ Erro ao conectar com o concierge: ${errorMessage.substring(0, 100)}...</div>`;
   }
 };
 
