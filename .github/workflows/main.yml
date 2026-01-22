@@ -1,0 +1,37 @@
+
+name: Lumina Finance CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Lint Check
+        run: npx tsc --noEmit # Verifica erros de TypeScript
+        
+      - name: Build Project
+        run: npm run build
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Deployment Note
+        run: echo "Build concluído com sucesso. O deploy automático será acionado pelo provedor de hospedagem (Vercel/Netlify)."

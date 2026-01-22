@@ -1,0 +1,79 @@
+
+import { GoogleGenAI } from "@google/genai";
+import { Transaction, Account, Debt, FixedExpense } from "../types";
+
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey.trim() === '') return null;
+  try {
+    return new GoogleGenAI({ apiKey });
+  } catch (e) {
+    console.error("Failed to initialize Gemini client:", e);
+    return null;
+  }
+};
+
+export const getFinancialInsights = async (
+  transactions: Transaction[],
+  accounts: Account[],
+  debts: Debt[],
+  fixedExpenses: FixedExpense[] = []
+): Promise<string> => {
+  const ai = getAIClient();
+  if (!ai) {
+    return "<div class='p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-400'>✨ Configure a API Key do Gemini para obter insights financeiros.</div>";
+  }
+
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+
+  // Projection calculation for AI
+  const pendingFixed = fixedExpenses.filter(e => e.lastPaidMonth !== currentMonthStr);
+  const totalCommitment = pendingFixed.reduce((sum, e) => sum + e.amount, 0) +
+    debts.filter(d => d.status !== 'PAID').reduce((sum, d) => sum + (d.totalAmount / d.installmentsTotal), 0);
+
+  const summaryData = {
+    balance: accounts.reduce((sum, a) => sum + a.balance, 0),
+    fixedExpensesCount: fixedExpenses.length,
+    pendingCommitment: totalCommitment,
+    debtsCount: debts.length,
+    recentExpenses: transactions.filter(t => t.type === 'EXPENSE').slice(0, 10).map(t => ({ desc: t.description, amount: t.amount }))
+  };
+
+  const prompt = `
+    Atue como um concierge financeiro estrategista.
+    Dados Atuais: ${JSON.stringify(summaryData)}
+
+    Instruções:
+    1. Analise se o saldo atual cobre os compromissos pendentes (R$ ${totalCommitment.toFixed(2)}).
+    2. Dê um feedback sobre a organização de gastos fixos vs variáveis.
+    3. Responda em HTML estilizado com Tailwind (use <div>, <p>, <span>).
+    4. Se o saldo for menor que os compromissos, dê um alerta crítico em vermelho.
+    5. Idioma: Português do Brasil.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt,
+    });
+    const text = response.text;
+    return text || "Sem insights no momento.";
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    return "Erro ao conectar com o concierge.";
+  }
+};
+
+export const suggestCategory = async (description: string): Promise<string> => {
+  const ai = getAIClient();
+  if (!ai) return "";
+
+  const prompt = `Classifique: "${description}" em uma categoria (retorne APENAS o nome): Moradia, Alimentação, Transporte, Lazer, Compras, Salário, Investimentos, Saúde.`;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash', contents: prompt,
+    });
+    const text = response.text;
+    return text?.trim() || "";
+  } catch (e) { return ""; }
+}

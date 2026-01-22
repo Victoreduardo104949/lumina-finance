@@ -1,0 +1,8 @@
+
+{
+  "name": "Lumina Finance",
+  "description": "Sistema de Gestão Financeira Pessoal com IA",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
