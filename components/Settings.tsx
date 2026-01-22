@@ -16,10 +16,10 @@ interface SettingsProps {
   profiles: Profile[];
 }
 
-const Settings: React.FC<SettingsProps> = ({ 
-  categories, onAddCategory, onDeleteCategory, 
-  syncConfig, onUpdateSyncConfig, onSync, 
-  onExport, onImport, profiles 
+const Settings: React.FC<SettingsProps> = ({
+  categories, onAddCategory, onDeleteCategory,
+  syncConfig, onUpdateSyncConfig, onSync,
+  onExport, onImport, profiles
 }) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -65,31 +65,14 @@ const Settings: React.FC<SettingsProps> = ({
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Supabase URL</label>
-              <input 
-                type="text" 
-                value={syncConfig.supabaseUrl}
-                onChange={(e) => onUpdateSyncConfig({ ...syncConfig, supabaseUrl: e.target.value })}
-                placeholder="https://your-project.supabase.co"
-                className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold text-xs"
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Anon Key</label>
-              <input 
-                type="password" 
-                value={syncConfig.supabaseKey}
-                onChange={(e) => onUpdateSyncConfig({ ...syncConfig, supabaseKey: e.target.value })}
-                placeholder="sua-chave-secreta"
-                className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold text-xs"
-              />
-            </div>
+          <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl mb-4">
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-400">
+              A conexão com o banco de dados é gerenciada automaticamente pelo sistema.
+            </p>
           </div>
 
           <div className="flex flex-col md:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <button 
+            <button
               onClick={handleSyncClick}
               disabled={!syncConfig.supabaseUrl || isSyncing}
               className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 disabled:opacity-40"
@@ -119,7 +102,7 @@ const Settings: React.FC<SettingsProps> = ({
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Personalize seus gastos</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onAddCategory}
             className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-800 dark:text-white hover:scale-110 transition-transform"
           >
@@ -133,12 +116,12 @@ const Settings: React.FC<SettingsProps> = ({
             return (
               <div key={cat.id} className="group relative p-4 rounded-3xl bg-slate-50 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">
                 <div className="flex flex-col items-center text-center gap-2">
-                   <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: cat.color }}>
-                      <Icon size={20} />
-                   </div>
-                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate w-full">{cat.name}</span>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: cat.color }}>
+                    <Icon size={20} />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate w-full">{cat.name}</span>
                 </div>
-                <button 
+                <button
                   onClick={() => onDeleteCategory(cat.id)}
                   className="absolute -top-2 -right-2 p-1.5 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg scale-75 hover:scale-100"
                 >
@@ -163,7 +146,7 @@ const Settings: React.FC<SettingsProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button 
+          <button
             onClick={onExport}
             className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all flex flex-col items-center gap-3"
           >
