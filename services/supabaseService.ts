@@ -252,3 +252,4 @@ export const deleteRemoteVault = async (id: string) => supabase?.from('vaults').
 export const deleteRemoteDebt = async (id: string) => supabase?.from('debts').delete().eq('id', id);
 export const deleteRemoteFixedExpense = async (id: string) => supabase?.from('fixed_expenses').delete().eq('id', id);
 export const deleteRemoteTransaction = async (id: string) => supabase?.from('transactions').delete().eq('id', id);
+export const deleteRemoteProfile = async (id: string) => supabase?.from('profiles').delete().eq('id', id);

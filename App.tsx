@@ -17,7 +17,7 @@ import ProfileSelector from './components/ProfileSelector';
 import { MOCK_CATEGORIES } from './constants';
 import { Transaction, Account, Category, UserStats, Vault, Profile, Debt, FixedExpense, SyncConfig } from './types';
 import { Trash2, Plus, CreditCard as CreditCardIcon, Landmark, Wallet, Banknote, TrendingUp } from 'lucide-react';
-import { initSupabase, syncData, deleteRemoteCategory, fetchData, deleteRemoteAccount, deleteRemoteVault, deleteRemoteDebt, deleteRemoteFixedExpense } from './services/supabaseService';
+import { initSupabase, syncData, deleteRemoteCategory, fetchData, deleteRemoteAccount, deleteRemoteVault, deleteRemoteDebt, deleteRemoteFixedExpense, deleteRemoteProfile } from './services/supabaseService';
 
 const App: React.FC = () => {
   const [profiles, setProfiles] = useState<Profile[]>(() => {
@@ -187,6 +187,43 @@ const App: React.FC = () => {
     };
     setProfiles(prev => [...prev, newProfile]);
     setCurrentProfileId(newProfile.id);
+  };
+
+  const handleDeleteProfile = (id: string) => {
+    if (profiles.length <= 1) {
+      alert("Você deve ter pelo menos um perfil.");
+      return;
+    }
+
+    if (window.confirm("Deseja excluir este perfil? Todos os dados vinculados (contas, transações, etc.) serão perdidos.")) {
+      setProfiles(prev => prev.filter(p => p.id !== id));
+
+      // Cleanup local state
+      setTransactions(prev => prev.filter(t => t.profileId !== id));
+      setAccounts(prev => prev.filter(a => a.profileId !== id));
+      setCategories(prev => prev.filter(c => c.profileId !== id));
+      setVaults(prev => prev.filter(v => v.profileId !== id));
+      setDebts(prev => prev.filter(d => d.profileId !== id));
+      setFixedExpenses(prev => prev.filter(e => e.profileId !== id));
+      setAllUserStats(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+
+      // Switch profile if active was deleted
+      if (currentProfileId === id) {
+        const remainingProfiles = profiles.filter(p => p.id !== id);
+        if (remainingProfiles.length > 0) {
+          setCurrentProfileId(remainingProfiles[0].id);
+        }
+      }
+
+      // Sync remote
+      if (syncConfig.enabled) {
+        deleteRemoteProfile(id);
+      }
+    }
   };
 
   const handleSync = async () => {
@@ -381,6 +418,7 @@ const App: React.FC = () => {
         currentProfileId={currentProfileId}
         onSelectProfile={setCurrentProfileId}
         onAddProfile={handleAddProfile}
+        onDeleteProfile={handleDeleteProfile}
       />
 
       <TransactionForm isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleAddTransaction} categories={filteredCategories} accounts={filteredAccounts} />
