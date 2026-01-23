@@ -26,9 +26,8 @@ const FinancialAI: React.FC<FinancialAIProps> = ({ transactions, accounts, debts
     };
 
     useEffect(() => {
-        // Fetch initial insight on mount
-        fetchInsights();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        // Concierge analysis only executes on manual request (RefreshCw button click)
+    }, []);
 
     return (
         <div className="glass-card p-5 rounded-3xl border border-purple-500/20 bg-gradient-to-br from-white/40 to-purple-50/40 dark:from-slate-800/60 dark:to-slate-900/60 mt-6 relative overflow-hidden group">

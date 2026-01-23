@@ -14,6 +14,7 @@ import FinancialAI from './components/FinancialAI';
 import RewardOverlay from './components/RewardOverlay';
 import Settings from './components/Settings';
 import ProfileSelector from './components/ProfileSelector';
+import LockScreen from './components/LockScreen';
 import { MOCK_CATEGORIES } from './constants';
 import { Transaction, Account, Category, UserStats, Vault, Profile, Debt, FixedExpense, SyncConfig } from './types';
 import { Trash2, Plus, CreditCard as CreditCardIcon, Landmark, Wallet, Banknote, TrendingUp } from 'lucide-react';
@@ -78,6 +79,13 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : {};
   });
 
+  const [pinConfig, setPinConfig] = useState(() => {
+    const saved = localStorage.getItem('lumina_pin_config');
+    return saved ? JSON.parse(saved) : { enabled: false, pin: '' };
+  });
+
+  const [isLocked, setIsLocked] = useState(pinConfig.enabled);
+
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const currentProfile = useMemo(() =>
@@ -112,7 +120,8 @@ const App: React.FC = () => {
     localStorage.setItem('lumina_fixed_expenses', JSON.stringify(fixedExpenses));
     localStorage.setItem('lumina_all_user_stats', JSON.stringify(allUserStats));
     localStorage.setItem('lumina_sync_config', JSON.stringify(syncConfig));
-  }, [profiles, currentProfileId, transactions, accounts, categories, vaults, debts, fixedExpenses, allUserStats, syncConfig]);
+    localStorage.setItem('lumina_pin_config', JSON.stringify(pinConfig));
+  }, [profiles, currentProfileId, transactions, accounts, categories, vaults, debts, fixedExpenses, allUserStats, syncConfig, pinConfig]);
 
   // Auto-sync effect
   useEffect(() => {
@@ -292,6 +301,10 @@ const App: React.FC = () => {
 
   const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
+  if (isLocked && pinConfig.enabled) {
+    return <LockScreen correctPin={pinConfig.pin} onUnlock={() => setIsLocked(false)} />;
+  }
+
   return (
     <HashRouter>
       <Layout
@@ -406,6 +419,8 @@ const App: React.FC = () => {
               onExport={handleExport}
               onImport={handleImport}
               profiles={profiles}
+              pinConfig={pinConfig}
+              onUpdatePinConfig={setPinConfig}
             />
           } />
         </Routes>

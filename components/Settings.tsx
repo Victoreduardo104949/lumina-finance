@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Database, Tag, Download, Upload, Trash2, Plus, ShieldCheck, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Database, Tag, Download, Upload, Trash2, Plus, ShieldCheck, RefreshCw, AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
 import { Category, SyncConfig, Profile } from '../types';
 import * as Icons from 'lucide-react';
 
@@ -14,12 +14,15 @@ interface SettingsProps {
   onExport: () => void;
   onImport: (data: string) => void;
   profiles: Profile[];
+  pinConfig: { enabled: boolean; pin: string };
+  onUpdatePinConfig: (config: { enabled: boolean; pin: string }) => void;
 }
 
 const Settings: React.FC<SettingsProps> = ({
   categories, onAddCategory, onDeleteCategory,
   syncConfig, onUpdateSyncConfig, onSync,
-  onExport, onImport, profiles
+  onExport, onImport, profiles,
+  pinConfig, onUpdatePinConfig
 }) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -173,6 +176,52 @@ const Settings: React.FC<SettingsProps> = ({
             {importError}
           </div>
         )}
+      </section>
+
+      {/* Security Section */}
+      <section className="glass-card p-6 rounded-[2.5rem] border-2 border-rose-500/10">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-rose-600 text-white rounded-2xl shadow-lg shadow-rose-600/20">
+            <Lock size={20} />
+          </div>
+          <div>
+            <h2 className="font-black text-lg">Segurança</h2>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Proteja seu acesso</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-3xl">
+            <div>
+              <p className="font-bold text-sm">Bloqueio por PIN</p>
+              <p className="text-[10px] text-slate-400">Exigir senha de 4 dígitos ao abrir o app</p>
+            </div>
+            <button
+              onClick={() => {
+                if (pinConfig.enabled) {
+                  onUpdatePinConfig({ enabled: false, pin: '' });
+                } else {
+                  const newPin = window.prompt("Defina seu novo PIN de 4 dígitos:");
+                  if (newPin && newPin.length === 4 && /^\d+$/.test(newPin)) {
+                    onUpdatePinConfig({ enabled: true, pin: newPin });
+                  } else if (newPin) {
+                    alert("O PIN deve conter exatamente 4 números.");
+                  }
+                }
+              }}
+              className={`w-14 h-8 rounded-full transition-all relative ${pinConfig.enabled ? 'bg-rose-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+            >
+              <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-sm transition-all ${pinConfig.enabled ? 'right-1' : 'left-1'}`} />
+            </button>
+          </div>
+
+          {pinConfig.enabled && (
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30 rounded-3xl flex items-center gap-3">
+              <CheckCircle2 className="text-emerald-500" size={18} />
+              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Proteção ativa com PIN configurado.</p>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
