@@ -165,6 +165,10 @@ export const fetchData = async () => {
   try {
     const { data: profiles, error: errProf } = await supabase.from('profiles').select('*');
     if (errProf) throw errProf;
+    if (!profiles || profiles.length === 0) {
+      // Return success: false because we don't want to overwrite local data with "nothing"
+      return { success: false, error: "Nenhum perfil encontrado no servidor" };
+    }
 
     const { data: accounts, error: errAcc } = await supabase.from('accounts').select('*');
     if (errAcc) throw errAcc;
@@ -184,8 +188,8 @@ export const fetchData = async () => {
     const { data: fixedExpenses, error: errFixed } = await supabase.from('fixed_expenses').select('*');
     if (errFixed) throw errFixed;
 
-    const { data: appSettings, error: errSettings } = await supabase.from('app_settings').select('*').single();
-    // It's fine if settings don't exist yet
+    const { data: appSettings, error: errSettings } = await supabase.from('app_settings').select('*').maybeSingle();
+    // Use maybeSingle() to avoid error when no row exists, but table-missing will still return error
 
     // Map content back to frontend types if necessary, though direct mapping is close.
     // We'll perform basic mapping to ensure camelCase compatibility
@@ -249,7 +253,7 @@ export const fetchData = async () => {
         vaults: mappedVaults,
         debts: mappedDebts,
         fixedExpenses: mappedFixed,
-        pinConfig: appSettings ? { enabled: appSettings.pin_enabled, pin: appSettings.pin_code } : null
+        pinConfig: appSettings ? { enabled: !!appSettings.pin_enabled, pin: appSettings.pin_code } : null
       }
     };
 
