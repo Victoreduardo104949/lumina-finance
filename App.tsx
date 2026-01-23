@@ -129,7 +129,7 @@ const App: React.FC = () => {
       const timer = setTimeout(async () => {
         console.log("🔄 Iniciando sincronização automática...");
         try {
-          const result = await syncData(profiles, allUserStats, accounts, categories, vaults, transactions, debts, fixedExpenses);
+          const result = await syncData(profiles, allUserStats, accounts, categories, vaults, transactions, debts, fixedExpenses, pinConfig);
           if (result.success) {
             console.log("✅ Sincronização automática concluída com sucesso!");
             setSyncConfig(prev => ({ ...prev, lastSynced: new Date().toISOString() }));
@@ -164,6 +164,10 @@ const App: React.FC = () => {
             setVaults(result.data.vaults);
             setDebts(result.data.debts);
             setFixedExpenses(result.data.fixedExpenses);
+            if (result.data.pinConfig) {
+              setPinConfig(result.data.pinConfig);
+              setIsLocked(result.data.pinConfig.enabled);
+            }
 
             setAllUserStats(prev => {
               const newStats = { ...prev };
@@ -240,7 +244,7 @@ const App: React.FC = () => {
       alert("Configure as chaves do Supabase primeiro!");
       return;
     }
-    const result = await syncData(profiles, allUserStats, accounts, categories, vaults, transactions, debts, fixedExpenses);
+    const result = await syncData(profiles, allUserStats, accounts, categories, vaults, transactions, debts, fixedExpenses, pinConfig);
     if (result.success) {
       setSyncConfig(prev => ({ ...prev, enabled: true, lastSynced: new Date().toISOString() }));
     } else {

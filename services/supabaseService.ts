@@ -32,7 +32,8 @@ export const syncData = async (
   vaults: Vault[],
   transactions: Transaction[],
   debts: Debt[],
-  fixedExpenses: FixedExpense[]
+  fixedExpenses: FixedExpense[],
+  pinConfig: { enabled: boolean; pin: string }
 ): Promise<{ success: boolean; error?: string }> => {
   if (!supabase) supabase = getStoredSupabase();
   if (!supabase) return { success: false, error: "Supabase não inicializado" };
@@ -142,6 +143,14 @@ export const syncData = async (
     const { error: errTx } = await supabase.from('transactions').upsert(txPayload);
     if (errTx) throw errTx;
 
+    // 8. App Settings (PIN)
+    const { error: errSettings } = await supabase.from('app_settings').upsert({
+      id: 'global_settings',
+      pin_enabled: pinConfig.enabled,
+      pin_code: pinConfig.pin
+    });
+    if (errSettings) throw errSettings;
+
     return { success: true };
   } catch (error: any) {
     console.error("Erro na sincronização:", error);
@@ -174,6 +183,9 @@ export const fetchData = async () => {
 
     const { data: fixedExpenses, error: errFixed } = await supabase.from('fixed_expenses').select('*');
     if (errFixed) throw errFixed;
+
+    const { data: appSettings, error: errSettings } = await supabase.from('app_settings').select('*').single();
+    // It's fine if settings don't exist yet
 
     // Map content back to frontend types if necessary, though direct mapping is close.
     // We'll perform basic mapping to ensure camelCase compatibility
@@ -236,7 +248,8 @@ export const fetchData = async () => {
         transactions: mappedTransactions,
         vaults: mappedVaults,
         debts: mappedDebts,
-        fixedExpenses: mappedFixed
+        fixedExpenses: mappedFixed,
+        pinConfig: appSettings ? { enabled: appSettings.pin_enabled, pin: appSettings.pin_code } : null
       }
     };
 
