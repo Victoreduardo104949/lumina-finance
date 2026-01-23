@@ -81,10 +81,13 @@ const App: React.FC = () => {
 
   const [pinConfig, setPinConfig] = useState(() => {
     const saved = localStorage.getItem('lumina_pin_config');
-    return saved ? JSON.parse(saved) : { enabled: false, pin: '' };
+    const parsed = saved ? JSON.parse(saved) : { enabled: false, pin: '' };
+    console.log("🔒 Debug PIN (Local):", parsed);
+    return parsed;
   });
 
   const [isLocked, setIsLocked] = useState(pinConfig.enabled);
+  console.log("🔓 App Locked:", isLocked, "Config Enabled:", pinConfig.enabled);
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
@@ -165,8 +168,12 @@ const App: React.FC = () => {
             setDebts(result.data.debts);
             setFixedExpenses(result.data.fixedExpenses);
             if (result.data.pinConfig) {
+              console.log("☁️ Debug PIN (Remote):", result.data.pinConfig);
               setPinConfig(result.data.pinConfig);
-              setIsLocked(result.data.pinConfig.enabled);
+              // Avoid locking the user out if they are already using the app
+              if (!isLocked && result.data.pinConfig.enabled && !localStorage.getItem('lumina_unlocked_session')) {
+                setIsLocked(true);
+              }
             }
 
             setAllUserStats(prev => {
@@ -306,7 +313,10 @@ const App: React.FC = () => {
   const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   if (isLocked && pinConfig.enabled) {
-    return <LockScreen correctPin={pinConfig.pin} onUnlock={() => setIsLocked(false)} />;
+    return <LockScreen correctPin={pinConfig.pin} onUnlock={() => {
+      setIsLocked(false);
+      localStorage.setItem('lumina_unlocked_session', 'true');
+    }} />;
   }
 
   return (
