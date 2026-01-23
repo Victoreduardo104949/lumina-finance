@@ -169,10 +169,13 @@ const App: React.FC = () => {
             setFixedExpenses(result.data.fixedExpenses);
             if (result.data.pinConfig) {
               console.log("☁️ Debug PIN (Remote):", result.data.pinConfig);
-              setPinConfig(result.data.pinConfig);
-              // Avoid locking the user out if they are already using the app
-              if (!isLocked && result.data.pinConfig.enabled && !localStorage.getItem('lumina_unlocked_session')) {
-                setIsLocked(true);
+              // Only overwrite local if remote has a PIN or if we don't have one locally
+              const localPin = JSON.parse(localStorage.getItem('lumina_pin_config') || '{}');
+              if (result.data.pinConfig.enabled || !localPin.enabled) {
+                setPinConfig(result.data.pinConfig);
+                if (!isLocked && result.data.pinConfig.enabled && !localStorage.getItem('lumina_unlocked_session')) {
+                  setIsLocked(true);
+                }
               }
             }
 
@@ -312,8 +315,10 @@ const App: React.FC = () => {
 
   const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-  if (isLocked && pinConfig.enabled) {
-    return <LockScreen correctPin={pinConfig.pin} onUnlock={() => {
+  // Enhanced security check: show lock screen if locked AND we have a pin configured (local or remote)
+  if (isLocked && (pinConfig.enabled || localStorage.getItem('lumina_pin_config'))) {
+    const activePin = pinConfig.pin || JSON.parse(localStorage.getItem('lumina_pin_config') || '{}').pin;
+    return <LockScreen correctPin={activePin} onUnlock={() => {
       setIsLocked(false);
       localStorage.setItem('lumina_unlocked_session', 'true');
     }} />;
