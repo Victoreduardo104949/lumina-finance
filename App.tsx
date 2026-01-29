@@ -15,6 +15,7 @@ import RewardOverlay from './components/RewardOverlay';
 import Settings from './components/Settings';
 import ProfileSelector from './components/ProfileSelector';
 import LockScreen from './components/LockScreen';
+import VaultTransferModal from './components/VaultTransferModal';
 import { MOCK_CATEGORIES } from './constants';
 import { Transaction, Account, Category, UserStats, Vault, Profile, Debt, FixedExpense, SyncConfig } from './types';
 import { Trash2, Plus, CreditCard as CreditCardIcon, Landmark, Wallet, Banknote, TrendingUp } from 'lucide-react';
@@ -108,6 +109,9 @@ const App: React.FC = () => {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
+  const [editingVault, setEditingVault] = useState<Vault | null>(null);
+  const [isVaultTransferModalOpen, setIsVaultTransferModalOpen] = useState(false);
+  const [transferTargetVault, setTransferTargetVault] = useState<Vault | null>(null);
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [rewardState, setRewardState] = useState<{ xp: number | null, achievement: any | null }>({ xp: null, achievement: null });
@@ -324,6 +328,50 @@ const App: React.FC = () => {
     }} />;
   }
 
+  const handleVaultSubmit = (data: Partial<Vault>) => {
+    if (editingVault) {
+      setVaults(prev => prev.map(v => v.id === editingVault.id ? { ...v, ...data } : v));
+    } else {
+      setVaults(prev => [...prev, { ...data, id: `v_${Date.now()}`, profileId: currentProfileId, currentAmount: data.currentAmount || 0 } as Vault]);
+    }
+    setIsVaultModalOpen(false);
+    setEditingVault(null);
+  };
+
+  const handleVaultTransfer = (data: { vaultId: string; accountId: string; amount: number; type: 'DEPOSIT' | 'WITHDRAW' }) => {
+    const vault = vaults.find(v => v.id === data.vaultId);
+    if (!vault) return;
+
+    const newTx: Transaction = {
+      id: `tx_${Date.now()}_vault`,
+      profileId: currentProfileId,
+      amount: data.amount,
+      date: new Date().toISOString(),
+      description: data.type === 'DEPOSIT' ? `Guardado Meta: ${vault.name}` : `Resgatado Meta: ${vault.name}`,
+      type: data.type === 'DEPOSIT' ? 'EXPENSE' : 'INCOME',
+      accountId: data.accountId,
+      categoryId: 'others', // Fallback since Vault doesn't have a specific category
+      status: 'COMPLETED'
+    };
+
+    setTransactions(prev => [newTx, ...prev]);
+
+    setAccounts(prev => prev.map(acc => {
+      if (acc.id === data.accountId) {
+        return { ...acc, balance: data.type === 'DEPOSIT' ? acc.balance - data.amount : acc.balance + data.amount };
+      }
+      return acc;
+    }));
+
+    setVaults(prev => prev.map(v => {
+      if (v.id === data.vaultId) {
+        const nextAmount = data.type === 'DEPOSIT' ? v.currentAmount + data.amount : v.currentAmount - data.amount;
+        return { ...v, currentAmount: Math.max(0, nextAmount) };
+      }
+      return v;
+    }));
+  };
+
   return (
     <HashRouter>
       <Layout
@@ -333,12 +381,27 @@ const App: React.FC = () => {
       >
         <RewardOverlay xpGained={rewardState.xp} achievementUnlocked={rewardState.achievement} onClose={() => setRewardState({ xp: null, achievement: null })} />
         <Routes>
-          <Route path="/" element={<Dashboard transactions={filteredTransactions} accounts={filteredAccounts} vaults={filteredVaults} fixedExpenses={filteredFixedExpenses} debts={filteredDebts} privacyMode={privacyMode} togglePrivacy={() => setPrivacyMode(!privacyMode)} userStats={currentUserStats} onAddVault={() => setIsVaultModalOpen(true)} onDeleteVault={(id) => {
-            if (window.confirm('Excluir este cofre?')) {
-              setVaults(v => v.filter(item => item.id !== id));
-              if (syncConfig.enabled) deleteRemoteVault(id);
-            }
-          }} />} />
+          <Route path="/" element={
+            <Dashboard
+              transactions={filteredTransactions}
+              accounts={filteredAccounts}
+              vaults={filteredVaults}
+              fixedExpenses={filteredFixedExpenses}
+              debts={filteredDebts}
+              privacyMode={privacyMode}
+              togglePrivacy={() => setPrivacyMode(!privacyMode)}
+              userStats={currentUserStats}
+              onAddVault={() => { setEditingVault(null); setIsVaultModalOpen(true); }}
+              onEditVault={(v) => { setEditingVault(v); setIsVaultModalOpen(true); }}
+              onTransferVault={(v) => { setTransferTargetVault(v); setIsVaultTransferModalOpen(true); }}
+              onDeleteVault={(id) => {
+                if (window.confirm('Excluir este cofre?')) {
+                  setVaults(v => v.filter(item => item.id !== id));
+                  if (syncConfig.enabled) deleteRemoteVault(id);
+                }
+              }}
+            />
+          } />
           <Route path="/wallet" element={
             <div className="space-y-6 animate-fadeIn pb-32">
               <div className="flex justify-between items-center px-4">

@@ -49,8 +49,8 @@ const LockScreen: React.FC<LockScreenProps> = ({ correctPin, onUnlock }) => {
                     <div
                         key={i}
                         className={`w-4 h-4 rounded-full transition-all duration-300 ${pin.length > i
-                                ? 'bg-blue-500 scale-125 shadow-[0_0_15px_rgba(59,130,246,0.5)]'
-                                : 'bg-slate-700'
+                            ? 'bg-blue-500 scale-125 shadow-[0_0_15px_rgba(59,130,246,0.5)]'
+                            : 'bg-slate-700'
                             } ${error ? 'bg-rose-500' : ''}`}
                     />
                 ))}
@@ -60,6 +60,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ correctPin, onUnlock }) => {
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                     <button
                         key={num}
+                        type="button"
                         onClick={() => handleNumberClick(num.toString())}
                         className="w-16 h-16 rounded-2xl bg-slate-800/50 hover:bg-slate-700 text-white text-2xl font-black transition-all active:scale-95 border border-slate-700/50"
                     >
@@ -68,12 +69,14 @@ const LockScreen: React.FC<LockScreenProps> = ({ correctPin, onUnlock }) => {
                 ))}
                 <div />
                 <button
+                    type="button"
                     onClick={() => handleNumberClick('0')}
                     className="w-16 h-16 rounded-2xl bg-slate-800/50 hover:bg-slate-700 text-white text-2xl font-black transition-all active:scale-95 border border-slate-700/50"
                 >
                     0
                 </button>
                 <button
+                    type="button"
                     onClick={handleDelete}
                     className="w-16 h-16 rounded-2xl flex items-center justify-center text-slate-400 hover:text-white transition-all active:scale-95"
                 >
