@@ -1,26 +1,25 @@
-# HE Frota - Sistema de Gestão de Frota 🚛
+# Lumina Finance 💎
 
-O **HE Frota** é uma solução moderna e robusta para o gerenciamento inteligente de veículos e operações logísticas. Desenvolvido com foco em alta performance e interface intuitiva, o sistema centraliza o controle operacional e financeiro para otimizar a tomada de decisão em frotas de diversos tamanhos.
+O **Lumina Finance** é uma plataforma de gestão financeira moderna projetada para oferecer clareza e controle total sobre a vida financeira. Através de uma interface intuitiva e visualizações de dados inteligentes, o sistema permite monitorar fluxos de caixa, planejar metas e obter insights valiosos sobre a saúde do seu patrimônio.
 
 ## 🚀 Funcionalidades
 
-* **Dashboard Estratégico:** Visão geral de custos operacionais, quilometragem e indicadores de status da frota.
-* **Gestão de Frota:** Inventário completo de veículos com controle de placas, modelos, anos e especificações.
-* **Controle de Motoristas:** Gestão de status em tempo real (Disponível, Em Viagem ou Agendado).
-* **Gestão de Viagens:** Fluxo para agendamento de rotas, monitoramento de cargas e acompanhamento de entregas.
-* **Módulo Financeiro:** Controle de custos fixos, gastos com combustível, pedágios e impostos.
-* **Manutenção e Segurança:** Alertas para manutenções preventivas e controle de vencimento de seguros.
+* **Dashboard Inteligente:** Visão consolidada de saldos, receitas e despesas mensais.
+* **Gestão de Transações:** Registro detalhado de movimentações com categorização automática.
+* **Análise Visual:** Gráficos interativos para acompanhamento de tendências e distribuição de gastos.
+* **Controle de Metas:** Ferramentas para definição e monitoramento de objetivos financeiros.
+* **Design Responsivo:** Interface otimizada para diferentes tamanhos de tela, garantindo acessibilidade.
 
 ## 🛠️ Tecnologias Utilizadas
 
-Este projeto utiliza uma stack tecnológica de ponta para garantir escalabilidade:
+Este projeto foi desenvolvido com as ferramentas mais modernas do mercado:
 
-* **[React](https://reactjs.org/):** Biblioteca para construção da interface.
-* **[TypeScript](https://www.typescriptlang.org/):** Segurança com tipagem estática.
-* **[Tailwind CSS](https://tailwindcss.com/):** Estilização utilitária para design responsivo.
-* **[Lucide React](https://lucide.dev/):** Biblioteca de ícones.
-* **[Motion](https://www.framer.com/motion/):** Animações fluidas de interface.
-* **[Recharts](https://recharts.org/):** Gráficos para análise de dados.
+* **[React](https://reactjs.org/):** Biblioteca principal para a interface.
+* **[TypeScript](https://www.typescriptlang.org/):** Tipagem estática para maior segurança e produtividade.
+* **[Tailwind CSS](https://tailwindcss.com/):** Framework utilitário para estilização rápida e consistente.
+* **[Lucide React](https://lucide.dev/):** Biblioteca de ícones vetoriais.
+* **[Recharts](https://recharts.org/):** Biblioteca de gráficos para visualização de dados.
+* **[Framer Motion](https://www.framer.com/motion/):** Engine de animações para transições suaves.
 
 ## 💻 Como Iniciar
 
@@ -29,11 +28,11 @@ Este projeto utiliza uma stack tecnológica de ponta para garantir escalabilidad
 * Node.js instalado
 * Gerenciador de pacotes (NPM ou Yarn)
 
-### Instalação e Execução
+### Instalação
 
 1. Clone o repositório:
    ```bash
-   git clone [https://github.com/Victoreduardo104949/HE-frota-gestao.git](https://github.com/Victoreduardo104949/HE-frota-gestao.git)
+   git clone [https://github.com/Victoreduardo104949/lumina-finance.git](https://github.com/Victoreduardo104949/lumina-finance.git)
    
 2. Clone o repositório:
    npm install
